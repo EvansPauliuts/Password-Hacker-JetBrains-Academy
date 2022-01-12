@@ -1,36 +1,24 @@
 # Password-Hacker-JetBrains-Academy
 This project jetbrains academy https://hyperskill.org/projects/80
 
-## Work on project. Stage 1/5: Establishing a connection
+## Work on project. Stage 2/5: Simple brute force
 ### Objectives
-Your program will receive command line arguments in this order:
+In this stage, you should write a program that:
 
-1. IP address
-2. port
-3. message for sending 
+1. Parses the command line and gets two arguments that are IP address and port.
+2. Tries different passwords until it finds the correct one.
+3. Prints the password it found.
 
-The algorithm is the following:
+Note that you can connect to the server only once and then send messages many times.
+Don't connect to the server before sending every message.
 
-1. Create a new socket.
-2. Connect to a host and a port using the socket.
-3. Send a message from the third command line argument to the host using the socket.
-4. Receive the server’s response.
-5. Print the server’s response.
-6. Close the socket.
+Also, note that here and throughout the project, the password is different every time you check your code.
+
 
 #### Examples
 The greater-than symbol followed by a space (> ) represents the user input. Note that it's not part of the input.
 
-##### Example 1:
-
 ```shell
-> python hack.py localhost 9090 password
-Wrong password!
-```
-
-##### Example 2:
-
-```shell
-> python hack.py 127.0.0.1 9090 qwerty
-Connection Success!
+> python hack.py localhost 9090
+pass
 ```
